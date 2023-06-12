@@ -1,1 +1,1 @@
-docker build -t 112334emi/backemiuv:1.0 .
+docker build -t 112334emi/backemiliuv:1.0 .

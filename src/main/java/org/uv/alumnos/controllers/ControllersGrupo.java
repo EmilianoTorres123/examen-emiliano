@@ -28,85 +28,79 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/grupo")
 public class ControllersGrupo {
     
-    @Autowired
+@Autowired
     private RepositoryGrupo repositorygrupo;
-    
+
     @Autowired
-    private RepositoryAlumno  repositoryalumno;
-    
+    private RepositoryAlumno repositoryalumno;
+
     @Autowired
     private RepositoryMateria repositorymateria;
-
-
+    
     @GetMapping("/msg")
-    public String holamundo(){
+    public String holamundo() {
         return "Hola mundo";
     }
-    
+
     @GetMapping("/{id}")
-    public Grupo obtenergrupo(@PathVariable("id") long id) {
+    public ResponseEntity<Grupo> obtenergrupo(@PathVariable("id") long id) {
         Optional<Grupo> optionalGrupo = repositorygrupo.findById(id);
-        if (optionalGrupo.isPresent()) {
-            Grupo grupo = optionalGrupo.get();
-            return grupo;
-        } else {
-            return null;
+        if (!optionalGrupo.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
         }
+
+        return ResponseEntity.ok(optionalGrupo.get());
     }
 
     @GetMapping
-    public List<Grupo> obtenerTodosLasmaterias() {
-        List<Grupo> grupo = (List<Grupo>) repositorygrupo.findAll();
-       
-        return grupo;
+    public ResponseEntity<List<Grupo>> obtenerTodosLasmaterias() {
+        return ResponseEntity.ok(repositorygrupo.findAll());
     }
 
-    
     @PostMapping
     public Grupo crearGrupo(@RequestBody DTOGrupo grupoDTO) {
         Grupo grupo = new Grupo();
-        
-        if (grupoDTO.getClavealumnos() != null) {
-            Alumnos alumnos = repositoryalumno.findById(grupoDTO.getClavealumnos())
-                    .orElseThrow(() -> new RuntimeException("Alumnos no encontrado con ID: " + grupoDTO.getClavealumnos()));
-            grupo.setAlumnos(alumnos);
-        }
-        
-        if (grupoDTO.getClavemateria() != null) {
-            Materia materia = repositorymateria.findById(grupoDTO.getClavemateria())
-                    .orElseThrow(() -> new RuntimeException("Materia no encontrada con ID: " + grupoDTO.getClavemateria()));
-            grupo.setMateria(materia);
-        }
 
+        BeanUtils.copyProperties(grupoDTO, grupo, "clavemateria", "clavealumnos"); // Excluir los campos claveMateria y claveAlumno de la copia
+        // Asignar manualmente los valores de claveMateria y claveAlumno
+        Materia materia = repositorymateria.findById(grupoDTO.getClavemateria())
+                .orElseThrow(() -> new RuntimeException("Materia no encontrada con ID: " + grupoDTO.getClavemateria()));
+        Alumnos alumno = repositoryalumno.findById(grupoDTO.getClavealumnos())
+                .orElseThrow(() -> new RuntimeException("Alumno no encontrado con ID: " + grupoDTO.getClavealumnos()));
+
+        grupo.setMateria(materia);
+        grupo.setAlumnos(alumno);
         grupo.setNombregrupo(grupoDTO.getNombregrupo());
 
-        Grupo grupoNuevo = repositorygrupo.save(grupo);
-
-        return grupoNuevo;
+        return repositorygrupo.save(grupo);
     }
-
-
-
     @PutMapping("/{id}")
-    public Grupo actualizarGrupo(@PathVariable("id") Long id, @RequestBody DTOGrupo grupoDTO) {
+    public ResponseEntity<Grupo> actualizarGrupo(@PathVariable("id") Long id, @RequestBody DTOGrupo grupoDTO) {
+        Grupo grupo = new Grupo();
+        grupo.setNombregrupo(grupoDTO.getNombregrupo());
         Optional<Grupo> optionalGrupo = repositorygrupo.findById(id);
-        if (optionalGrupo.isPresent()) {
-            Grupo grupo = optionalGrupo.get();
-            grupo.setNombregrupo(grupoDTO.getNombregrupo());
-            
-            Grupo grupoActualizado = repositorygrupo.save(grupo);
 
-            return grupoActualizado;
-        } else {
-            return null;
+        if (!optionalGrupo.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
         }
-    
-        
+
+        grupo.setId(optionalGrupo.get().getId());
+        repositorygrupo.save(grupo);
+
+        return ResponseEntity.noContent().build();
     }
+
 
     @DeleteMapping("/{id}")
-    public void eliminarGrupo(@PathVariable("id") Long id) {
-        repositorygrupo.deleteById(id);
+    public ResponseEntity<Grupo> eliminarGrupo(@PathVariable("id") Long id) {
+        Optional<Grupo> optionalGrupo = repositorygrupo.findById(id);
+
+        if (!optionalGrupo.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+
+        repositorygrupo.delete(optionalGrupo.get());
+        return ResponseEntity.noContent().build();
     }
     
     

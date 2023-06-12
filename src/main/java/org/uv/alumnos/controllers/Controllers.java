@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,26 +34,24 @@ public class Controllers {
     private RepositoryAlumno repositoryalumno;
 
     @GetMapping("/msg")
-    public String holamundo(){
+    public String holamundo() {
         return "Hola mundo";
     }
-    
+
     @GetMapping("/{id}")
-    public Alumnos obtenerAlumno(@PathVariable("id") long id) {
+    public ResponseEntity<Alumnos> obtenerAlumno(@PathVariable("id") long id) {
         Optional<Alumnos> optionalAlumnos = repositoryalumno.findById(id);
-        if (optionalAlumnos.isPresent()) {
-            Alumnos alumno = optionalAlumnos.get();
-            return alumno;
-        } else {
-            return null;
+
+        if (!optionalAlumnos.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
         }
+
+        return ResponseEntity.ok(optionalAlumnos.get());
     }
 
     @GetMapping
-    public List<Alumnos> obtenerTodosLosalumnos() {
-        List<Alumnos> alumnos = (List<Alumnos>) repositoryalumno.findAll();
-
-        return alumnos;
+    public ResponseEntity<Page<Alumnos>> obtenerTodosLosalumnos(Pageable pageable) {
+        return ResponseEntity.ok(repositoryalumno.findAll(pageable));
     }
 
     @PostMapping
@@ -61,25 +62,29 @@ public class Controllers {
     }
 
     @PutMapping("/{id}")
-    public Alumnos actualizarAlumnos(@PathVariable("id") Long id, @RequestBody DTOAlumnos alumnoDTO) {
+    public ResponseEntity<Alumnos> actualizarAlumnos(@PathVariable("id") Long id, @RequestBody DTOAlumnos alumnoDTO) {
+        Alumnos alumno = new Alumnos();
+        alumno.setNombre(alumnoDTO.getNombre());
+        alumno.setDireccion(alumnoDTO.getDireccion());
+        alumno.setTelefono(alumnoDTO.getTelefono());
         Optional<Alumnos> optionalAlumnos = repositoryalumno.findById(id);
-        if (optionalAlumnos.isPresent()) {
-            Alumnos alumno = optionalAlumnos.get();
-            alumno.setNombre(alumnoDTO.getNombre());
-            alumno.setDireccion(alumnoDTO.getDireccion());
-            alumno.setTelefono(alumnoDTO.getTelefono());
 
-            Alumnos empleadoActualizado = repositoryalumno.save(alumno);
-
-            return empleadoActualizado;
-        } else {
-            return null;
+        if (!optionalAlumnos.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
         }
+        alumno.setClavealumnos(optionalAlumnos.get().getClavealumnos());
+        repositoryalumno.save(alumno);
+        return ResponseEntity.noContent().build();
     }
-
+    
     @DeleteMapping("/{id}")
-    public void eliminarEmpleado(@PathVariable("id") Long id) {
-        repositoryalumno.deleteById(id);
+    public ResponseEntity<Alumnos> eliminarEmpleado(@PathVariable("id") Long id) {
+        Optional<Alumnos> optionalAlumnos = repositoryalumno.findById(id);
+        if (!optionalAlumnos.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+        repositoryalumno.delete(optionalAlumnos.get());
+        return ResponseEntity.noContent().build();
     }
     
 }

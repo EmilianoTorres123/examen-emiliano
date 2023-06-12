@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,61 +30,62 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/materia")
 public class ControllersMaterias {
     
-    @Autowired
+     @Autowired
     private RepositoryMateria repositorymateria;
 
     @GetMapping("/msg")
-    public String holamundo(){
+    public String holamundo() {
         return "Hola mundo";
     }
-    
+
     @GetMapping("/{id}")
-    public Materia obtenermateria(@PathVariable("id") long id) {
+    public ResponseEntity<Materia> obtenermateria(@PathVariable("id") long id) {
         Optional<Materia> optionalMateria = repositorymateria.findById(id);
-        if (optionalMateria.isPresent()) {
-            Materia materia = optionalMateria.get();
-            return materia;
-        } else {
-            return null;
+        if (!optionalMateria.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
         }
+
+        return ResponseEntity.ok(optionalMateria.get());
     }
 
     @GetMapping
-    public List<Materia> obtenerTodosLasmaterias() {
-        List<Materia> materia = (List<Materia>) repositorymateria.findAll();
-        return materia;
+    public ResponseEntity<Page<Materia>> obtenerTodosLasmaterias(Pageable pageable) {
+        return ResponseEntity.ok(repositorymateria.findAll(pageable));
     }
 
     @PostMapping
-    public Materia crear(@RequestBody DTOMateria materiaDTO) {
-    Materia materia = new Materia();
-    BeanUtils.copyProperties(materiaDTO, materia);
-    
-    Materia materiaNuevo = repositorymateria.save(materia);
-    
-    return materiaNuevo;
-}
-
-    @PutMapping("/{id}")
-    public Materia actualizarMateria(@PathVariable("id") Long id, @RequestBody DTOMateria materiaDTO) {
-        Optional<Materia> optionalMateria = repositorymateria.findById(id);
-        if (optionalMateria.isPresent()) {
-            Materia materia = optionalMateria.get();
-            materia.setNombre(materiaDTO.getNombre());
-            materia.setCredito(materiaDTO.getCredito());
-            
-
-            Materia materiaActualizado = repositorymateria.save(materia);
-
-            return materiaActualizado;
-        } else {
-            return null;
-        }
+    public Materia crearMateria(@RequestBody DTOMateria materiaDTO) {
+        Materia materia = new Materia();
+        BeanUtils.copyProperties(materiaDTO, materia);
+        return repositorymateria.save(materia);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Materia> actualizarMateria(@PathVariable("id") Long id, @RequestBody DTOMateria materiaDTO) {
+        Materia materia = new Materia();
+        materia.setNombre(materiaDTO.getNombre());
+        materia.setCredito(materiaDTO.getCredito());
+        Optional<Materia> optionalMateria = repositorymateria.findById(id);
+
+        if (!optionalMateria.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+
+        materia.setClavemateria(optionalMateria.get().getClavemateria());
+        repositorymateria.save(materia);
+
+        return ResponseEntity.noContent().build();
+    }
     @DeleteMapping("/{id}")
-    public void eliminarEmpleado(@PathVariable("id") Long id) {
-        repositorymateria.deleteById(id);
+    public ResponseEntity<Materia> eliminarEmpleado(@PathVariable("id") Long id) {
+        Optional<Materia> optionalMateria = repositorymateria.findById(id);
+
+        if (!optionalMateria.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+
+        repositorymateria.delete(optionalMateria.get());
+        return ResponseEntity.noContent().build();
     }
     
 }
