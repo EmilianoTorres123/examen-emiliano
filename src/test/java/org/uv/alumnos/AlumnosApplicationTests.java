@@ -11,5 +11,4 @@ class AlumnosApplicationTests {
 	void contextLoads() {
              Assertions.assertEquals(2, 1 + 1);
 	}
-
 }
