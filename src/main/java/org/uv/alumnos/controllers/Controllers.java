@@ -77,13 +77,9 @@ public class Controllers {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Alumnos> eliminarEmpleado(@PathVariable("id") Long id) {
-        Optional<Alumnos> optionalAlumnos = repositoryalumno.findById(id);
-        if (!optionalAlumnos.isPresent()) {
-            return ResponseEntity.unprocessableEntity().build();
-        }
-        repositoryalumno.delete(optionalAlumnos.get());
-        return ResponseEntity.noContent().build();
-    }
+    public void eliminarAlumno (@PathVariable Long id) {
+        repositoryalumno.findById(id);
+       
+   }
     
 }

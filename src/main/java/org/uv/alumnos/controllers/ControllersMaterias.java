@@ -76,15 +76,7 @@ public class ControllersMaterias {
         return ResponseEntity.noContent().build();
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Materia> eliminarEmpleado(@PathVariable("id") Long id) {
-        Optional<Materia> optionalMateria = repositorymateria.findById(id);
-
-        if (!optionalMateria.isPresent()) {
-            return ResponseEntity.unprocessableEntity().build();
-        }
-
-        repositorymateria.delete(optionalMateria.get());
-        return ResponseEntity.noContent().build();
-    }
-    
+    public void eliminarMateria(@PathVariable("id") Long id) {
+        repositorymateria.findById(id);
+    }  
 }
